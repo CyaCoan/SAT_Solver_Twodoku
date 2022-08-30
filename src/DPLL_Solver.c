@@ -71,16 +71,21 @@ bool HaveEmptyClause(List *p_List)
  */
 List *MergeUnitClause(List *p_List, int v)
 {
+    // 头插法插入子句头结点
     ClauseNode *p_Clause = (ClauseNode *)malloc(sizeof(ClauseNode));
     p_Clause->literal_num = 1;
     p_Clause->next_clause = p_List->first_clause;
     p_List->first_clause = p_Clause;
+
+    // 更新子句数
     p_List->clause_num++;
 
+    // 添加单子句的文字
     p_Clause->first_literal = (LiteralNode *)malloc(sizeof(LiteralNode));
     p_Clause->first_literal->literal = v;
     p_Clause->first_literal->next_literal = NULL;
 
+    // 更新文字频度表
     if (v > 0){
         p_List->pos_freq[v]++;
     }else{
@@ -121,6 +126,7 @@ int OptimizedSelectLiteral(List *p_List)
     int most_literal = 0;
     int max_freq = 0;
 
+    // 寻找频度最高的正文字
     for (int i = 1; i <= p_List->variable_num; i++){
         if (p_List->pos_freq[i] > max_freq){
             max_freq = p_List->pos_freq[i];
@@ -128,6 +134,7 @@ int OptimizedSelectLiteral(List *p_List)
         }
     }
 
+    // 未找到正文字则寻找频度最高的负文字
     if (max_freq == 0){
         for (int i = 1; i <= p_List->variable_num; i++){
             if (p_List->neg_freq[i] > max_freq){
@@ -151,9 +158,12 @@ int OptimizedSelectLiteral(List *p_List)
 ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause)
 {
     LiteralNode *p_Literal = p_Clause->first_literal;
+
+    // 删除全部文字
     while (p_Clause->first_literal != NULL){
         p_Clause->first_literal = p_Literal->next_literal;
 
+        // 更新文字频度表
         if (p_Literal->literal > 0){
             p_List->pos_freq[p_Literal->literal]--;
         }else{
@@ -164,20 +174,22 @@ ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause)
         p_Literal = p_Clause->first_literal;
     }
 
+    // 更新子句数
     p_List->clause_num--;
 
-    if (p_Clause == p_List->first_clause){
+    // 删除子句头结点
+    if (p_Clause == p_List->first_clause){ // 删除的是第一个头结点
         p_List->first_clause = p_Clause->next_clause;
         free(p_Clause);
-        return NULL;
-    }else{
+        return NULL; // 返回空指针
+    }else{ // 删除的是其他头结点
         ClauseNode *p_PrevClause = p_List->first_clause;
         while (p_PrevClause->next_clause != p_Clause){
             p_PrevClause = p_PrevClause->next_clause;
         }
         p_PrevClause->next_clause = p_Clause->next_clause;
         free(p_Clause);
-        return p_PrevClause;
+        return p_PrevClause; // 返回前驱指针
     }
 }
 
@@ -190,11 +202,13 @@ ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause)
  */
 void DeleteLiteral(List *p_List, ClauseNode *p_Clause, LiteralNode *p_Literal)
 {
+    // 更新子句的文字数
     p_Clause->literal_num--;
     
-    if (p_Literal == p_Clause->first_literal){
+    // 删除文字结点
+    if (p_Literal == p_Clause->first_literal){ // 删除的是第一个结点
         p_Clause->first_literal = p_Literal->next_literal;
-    }else{
+    }else{ // 删除的是其他结点
         LiteralNode *p_PrevLiteral = p_Clause->first_literal;
         while (p_PrevLiteral->next_literal != p_Literal){
             p_PrevLiteral = p_PrevLiteral->next_literal;
@@ -202,11 +216,13 @@ void DeleteLiteral(List *p_List, ClauseNode *p_Clause, LiteralNode *p_Literal)
         p_PrevLiteral->next_literal = p_Literal->next_literal;
     }
 
+    // 更新文字频度表
     if (p_Literal->literal > 0){
         p_List->pos_freq[p_Literal->literal]--;
     }else{
         p_List->neg_freq[0 - p_Literal->literal]--;
     }
+
     free(p_Literal);
 }
 
@@ -220,23 +236,33 @@ void SimplifyCNF(List *p_List, int unit_clause)
 {
     ClauseNode *p_Clause = p_List->first_clause;
     LiteralNode *p_Literal = NULL;
+
+    // 遍历子句
     while (p_Clause != NULL){
         p_Literal = p_Clause->first_literal;
+
+        // 寻找与单子句或它的逆相同的文字
         while (p_Literal != NULL){
+
+            // 出现与单子句相同的文字则删除文字所在子句
             if (p_Literal->literal == unit_clause){
                 p_Clause = DeleteClause(p_List, p_Clause);
                 break;
             }
+
+            // 出现与单子句的逆相同的文字则删除该文字
             if (p_Literal->literal == 0 - unit_clause){
                 DeleteLiteral(p_List, p_Clause, p_Literal);
                 break;
             }
+
             p_Literal = p_Literal->next_literal;
         }
-        if (p_Clause != NULL){
-            p_Clause = p_Clause->next_clause;
-        }else{
-            p_Clause = p_List->first_clause;
+
+        if (p_Clause != NULL){ // 删除的不是第一个子句
+            p_Clause = p_Clause->next_clause; // 遍历下一个子句
+        }else{ // 删除的是第一个子句
+            p_Clause = p_List->first_clause; // 遍历第一个子句
         }
     }
 }
@@ -249,12 +275,14 @@ void SimplifyCNF(List *p_List, int unit_clause)
  */
 List *CopyList(List *p_List)
 {
+    // 复制参数
     List *p_TempList = (List *)malloc(sizeof(List));
     p_TempList->variable_num = p_List->variable_num;
     p_TempList->clause_num = p_List->clause_num;
     p_TempList->first_clause = NULL;
     p_TempList->flag = p_List->flag;
 
+    // 复制正负文字频度表
     p_TempList->pos_freq = (int *)malloc(sizeof(int) * (p_TempList->variable_num + 1));
     p_TempList->neg_freq = (int *)malloc(sizeof(int) * (p_TempList->variable_num + 1));
     for (int i = 1; i <= p_TempList->variable_num; i++){
@@ -265,7 +293,9 @@ List *CopyList(List *p_List)
     ClauseNode *p_Clause = p_List->first_clause;
     ClauseNode *p_TempListTail = NULL;
 
+    // 复制表
     for (int i = 0; i < p_TempList->clause_num; i++){
+        // 复制子句头结点
         ClauseNode *p_TempClause = (ClauseNode *)malloc(sizeof(ClauseNode));
         p_TempClause->literal_num = p_Clause->literal_num;
         p_TempClause->first_literal = NULL;
@@ -280,7 +310,9 @@ List *CopyList(List *p_List)
         LiteralNode *p_Literal = p_Clause->first_literal;
         LiteralNode *p_TempClauseTail = NULL;
 
+        // 复制子句
         for (int j = 0; j < p_TempClause->literal_num; j++){
+            // 复制文字结点
             LiteralNode *p_TempLiteral = (LiteralNode *)malloc(sizeof(LiteralNode));
             p_TempLiteral->literal = p_Literal->literal;
 
@@ -328,27 +360,32 @@ void ClearList(List *p_List)
  * 
  * @param p_List 存储CNF的十字链表
  * @param p_truth_table 变元真值表
+ * @param start 开始时间
  * @return SAT 为空范式（可满足）
  * @return UNSAT 有空子句（不可满足）
  * @return TLE 超时（立即返回）
  * @return NORMAL 化简完毕（继续选择文字）
  */
-status UnitClausePropagation(List *p_List, bool **p_truth_table)
+status UnitClausePropagation(List *p_List, bool **p_truth_table, clock_t start)
 {
     int unit_clause = 0;
 
+    // 检查是否超时
     clock_t now = clock();
     if ((int)(now - start) / CLOCKS_PER_SEC >= TIME_LIMIT){
         return TLE;
     }
 
+    // 不断寻找单子句并化简，直到没有单子句
     while (unit_clause = GetUnitClause(p_List)){
+        // 给单子句赋值
         if (unit_clause > 0){
             (*p_truth_table)[unit_clause] = true;
         }else if (unit_clause < 0){
             (*p_truth_table)[0 - unit_clause] = false;
         }
 
+        // 利用单子句化简范式
         SimplifyCNF(p_List, unit_clause);
         
         if (IsEmptyCNF(p_List)){
@@ -368,32 +405,38 @@ status UnitClausePropagation(List *p_List, bool **p_truth_table)
  * @param p_List 存储CNF的十字链表
  * @param p_truth_table 变元真值表
  * @param mode 模式（0为不优化，1为优化）
+ * @param start 开始时间
  * @return SAT 可满足
  * @return UNSAT 不可满足
  * @return TLE 超时
  */
-status DPLL(char *path_out, List *p_List, bool **p_truth_table, int mode)
+status DPLL(char *path_out, List *p_List, bool **p_truth_table, int mode, clock_t start)
 {   
-    status state = UnitClausePropagation(p_List, p_truth_table);
+    // 单子句传播
+    status state = UnitClausePropagation(p_List, p_truth_table, start);
     if (state != NORMAL){
         return state;
     }
 
+    // 不同的文字选取策略
     int v;
     if (mode == 0) v = SelectLiteral(p_List);
     if (mode == 1) v = OptimizedSelectLiteral(p_List);
     // printf("%d\n", v);
 
+    // 复制表，以免破坏原表
     List *p_TempList = CopyList(p_List);
 
-    status res1 = DPLL(path_out, MergeUnitClause(p_List, v), p_truth_table, mode);
+    // 选取的文字取真
+    status res1 = DPLL(path_out, MergeUnitClause(p_List, v), p_truth_table, mode, start);
     if (res1 == SAT){
         return SAT;
     }else if (res1 == TLE){
         return TLE;
     }
 
-    status res2 = DPLL(path_out, MergeUnitClause(p_TempList, 0 - v), p_truth_table, mode);
+    // 选取的文字取假
+    status res2 = DPLL(path_out, MergeUnitClause(p_TempList, 0 - v), p_truth_table, mode, start);
     ClearList(p_TempList);
     free(p_TempList);
     return res2;
@@ -453,17 +496,21 @@ void SolveSAT(char *path_out, List *p_List, bool **p_truth_table, int mode)
         printf("The list is empty!\n");
         return;
     }
-    
-    start = clock();
 
+    // 复制表，以免破坏原表
     List *p_TempList = CopyList(p_List);
     *p_truth_table = (bool *)malloc(sizeof(bool) * (p_List->variable_num + 1));
 
-    status res = DPLL(path_out, p_TempList, p_truth_table, mode);
+    // 记录DPLL算法所用时间
+    clock_t start = clock();
+    status res = DPLL(path_out, p_TempList, p_truth_table, mode, start);
+    clock_t end = clock();
 
+    // 销毁副本
     ClearList(p_TempList);
     free(p_TempList);
 
+    // 结果输出
     FILE *p_File;
     if ((p_File = fopen(path_out, "w")) == NULL){
         printf("Can't open the file!\n");
@@ -492,7 +539,6 @@ void SolveSAT(char *path_out, List *p_List, bool **p_truth_table, int mode)
 
         fprintf(p_File, "\n");
 
-        end = clock();
         double time = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
         printf("time : %.2lfms\n", time);
         fprintf(p_File, "t %.2lf\n", time);

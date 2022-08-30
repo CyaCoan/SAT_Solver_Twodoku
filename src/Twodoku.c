@@ -23,6 +23,35 @@ void SetZeros(int (*sudoku)[ROW][COL])
     }
 }
 
+void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
+{
+    (*sudoku)[row][col] = 0;
+    if (num < 0){
+        if (CheckNumber(sudoku, row, col, 0 - num) == false){
+            Color(BLACK + YELLOW * BACKGROUND);
+        }else{
+            Color(LIGHT_GREEN);
+        }
+        printf("%d", 0 - num);
+        Color(WHITE);
+        printf(" ");
+    }else{
+        if(num > 0){
+            if (CheckNumber(sudoku, row, col, num) == false){
+                Color(BLACK + LIGHT_RED * BACKGROUND);
+            }else{
+                Color(LIGHT_BLUE);
+            }
+        }else{
+            Color(GREY);
+        }
+        printf("%d", num);
+        Color(WHITE);
+        printf(" ");
+    }
+    (*sudoku)[row][col] = num;
+}
+
 /**
  * @brief 打印数独
  * 
@@ -32,16 +61,18 @@ void PrintSudoku(int (*sudoku)[ROW][COL])
 {
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
-            printf("%-2d", (*sudoku)[i][j]);
+            SetColorAndPrintNumber(sudoku, i, j, (*sudoku)[i][j]);
             if (j == 2 || j == 5){
                 printf(" ");
             }
+
         }
         printf("\n");
         if (i == 2 || i == 5 || i == 8){
             printf("\n");
         }
     }
+    Color(WHITE);
 }
 
 /**
@@ -51,10 +82,50 @@ void PrintSudoku(int (*sudoku)[ROW][COL])
  */
 void PrintTwodoku(Twodoku *twodoku)
 {
-    printf("The Upleft Sudoku\n");
-    PrintSudoku(&twodoku->sudoku_UL);
-    printf("The Downright Sudoku\n");
-    PrintSudoku(&twodoku->sudoku_DR);
+    printf("The UL Sudoku\t\t");
+    printf("The DR Sudoku\n");
+
+    for (int i = 0; i < 9; i++){
+        for (int j = 0; j < 9; j++){
+            SetColorAndPrintNumber(&twodoku->sudoku_UL, i, j, twodoku->sudoku_UL[i][j]);
+            if (j == 2 || j == 5){
+                printf(" ");
+            }
+
+        }
+
+        printf("\t");
+
+        for (int j = 0; j < 9; j++){
+            SetColorAndPrintNumber(&twodoku->sudoku_DR, i, j, twodoku->sudoku_DR[i][j]);
+            if (j == 2 || j == 5){
+                printf(" ");
+            }
+
+        }
+
+        printf("\n");
+        if (i == 2 || i == 5 || i == 8){
+            printf("\n");
+        }
+    }
+    Color(WHITE);
+}
+
+Twodoku *CopyTwodoku(Twodoku *twodoku)
+{
+    Twodoku *temp_twodoku = (Twodoku *)malloc(sizeof(Twodoku));
+    temp_twodoku->flag = twodoku->flag;
+    temp_twodoku->clue_num = twodoku->clue_num;
+    for (int i = 0; i < 9; i++){
+        for (int j = 0; j < 9; j++){
+            temp_twodoku->sudoku_UL[i][j] = twodoku->sudoku_DR[i][j];
+            temp_twodoku->sudoku_DR[i][j] = twodoku->sudoku_DR[i][j];
+            temp_twodoku->ans_UL[i][j] = twodoku->ans_UL[i][j];
+            temp_twodoku->ans_DR[i][j] = twodoku->ans_DR[i][j];
+        }
+    }
+    return temp_twodoku;
 }
 
 /**
@@ -97,22 +168,22 @@ int *Shuffle(const int *arr, int len, unsigned int seed)
  */
 bool CheckNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
 {
-    for (int i = 0; i < 9; i++){
-        if ((*sudoku)[i][col] == num || (*sudoku)[row][i] == num){
-            return false;
-        }
-    }
-
-    int block_row = row / 3;
-    int block_col = col / 3;
-    for (int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
-            if ((*sudoku)[block_row * 3 + i][block_col * 3 + j] == num){
+    if (num != 0){
+        for (int i = 0; i < 9; i++){
+            if (abs((*sudoku)[i][col]) == num || abs((*sudoku)[row][i]) == num){
                 return false;
             }
         }
+        int block_row = row / 3;
+        int block_col = col / 3;
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+                if (abs((*sudoku)[block_row * 3 + i][block_col * 3 + j]) == num){
+                    return false;
+                }
+            }
+        }
     }
-
     return true;
 }
 
@@ -255,14 +326,14 @@ bool ConsistentWithAnswer(int sudoku[ROW][COL], int ans[ROW][COL])
  */
 bool DigHoles(Twodoku *twodoku, clock_t start)
 {
-    int hole_num = 55;
+    int hole_num = 35;
 
     SaveAnswer(twodoku);
     
     srand(time(NULL));
 
     for (int i = 0; i < hole_num; i++){
-        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_LIMIT){
+        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_TIME_LIMIT){
             return false;
         }
 
@@ -286,7 +357,7 @@ bool DigHoles(Twodoku *twodoku, clock_t start)
     CopyOverlappedBlock(&twodoku->sudoku_UL, &twodoku->sudoku_DR);
 
     for (int i = 0; i < hole_num - 5; i++){
-        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_LIMIT){
+        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_TIME_LIMIT){
             return false;
         }
 
@@ -364,7 +435,7 @@ void GenerateTwodoku(Twodoku *twodoku)
     PrintTwodoku(twodoku);
 
     clock_t end = clock();
-    printf("time : %.2lfms", (double)(end - start) * 1000.0 / CLOCKS_PER_SEC);
+    printf("time : %.2lfms\n", (double)(end - start) * 1000.0 / CLOCKS_PER_SEC);
 
     twodoku->flag = true;
 }
@@ -609,12 +680,28 @@ bool CheckAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku)
         for (int j = 0; j < 9; j++){
             if (solution[0][i][j] != twodoku->ans_UL[i][j] 
                 || solution[1][i][j] != twodoku->ans_DR[i][j]){
-                    printf("Wrong answer!\n");
+                printf("Wrong answer!\n");
                 return false;
             }
         }
     }
 
+    Twodoku *temp_twodoku = CopyTwodoku(twodoku);
+
+    for (int i = 0; i < 9; i++){
+        for (int j = 0; j < 9; j++){
+            if (temp_twodoku->sudoku_UL[i][j] == 0){
+                temp_twodoku->sudoku_UL[i][j] = 0 - solution[0][i][j];
+            }
+            if (temp_twodoku->sudoku_DR[i][j] == 0){
+                temp_twodoku->sudoku_DR[i][j] = 0 - solution[1][i][j];
+            }
+        }
+    }
+
+    PrintTwodoku(temp_twodoku);
     printf("Correct answer!\n");
+
+    free(temp_twodoku);
     return true;
 }

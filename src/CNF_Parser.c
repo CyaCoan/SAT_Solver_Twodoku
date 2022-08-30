@@ -28,6 +28,7 @@ void ReadCNF(char *path, List *p_List)
         exit(-1);
     }
 
+    // 读取.cnf文件注释
     char ch;
     char buff[BUFF_SIZE];
     ch = fgetc(p_File);
@@ -36,21 +37,24 @@ void ReadCNF(char *path, List *p_List)
         ch = fgetc(p_File);
     }
 
+    // 读取参数
     char form[5];
     fscanf(p_File, "%s %d %d", &form, &p_List->variable_num, &p_List->clause_num);
 
+    // 初始化正负文字频度表
     p_List->pos_freq = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
     p_List->neg_freq = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
     for (int i = 0; i <= p_List->variable_num; i++){
         p_List->pos_freq[i] = p_List->neg_freq[i] = 0;
     }
 
+    // 建表
     p_List->first_clause = NULL;
     ClauseNode *p_ListTail = NULL;
     int literal;
 
     for (int i = 0; i < p_List->clause_num; i++){
-
+        // 建子句头结点的链表
         ClauseNode *p_Clause = (ClauseNode *)malloc(sizeof(ClauseNode));
         LiteralNode *p_ClauseTail = NULL;
         p_Clause->literal_num = 0;
@@ -64,12 +68,13 @@ void ReadCNF(char *path, List *p_List)
 
         p_Clause->first_literal = NULL;
         
+        // 建子句
         while ( fscanf(p_File, "%d", &literal) ){
-
             if (literal == 0){
                 break;
             }
 
+            // 更新子句的文字数和文字频度表
             p_Clause->literal_num++;
 
             if (literal > 0){
@@ -78,6 +83,7 @@ void ReadCNF(char *path, List *p_List)
                 p_List->neg_freq[0 - literal]++;
             }
 
+            // 建文字节点的链表
             LiteralNode *p_Literal = (LiteralNode *)malloc(sizeof(LiteralNode));
             p_Literal->literal = literal;
 
@@ -94,10 +100,10 @@ void ReadCNF(char *path, List *p_List)
     }
     p_ListTail->next_clause = NULL;
 
-    printf("Read Successfully!\n");
     p_List->flag = true;
-
     fclose(p_File);
+
+    printf("Read Successfully!\n");
 }
 
 /**
@@ -122,26 +128,26 @@ void OutputCNF(List *p_List)
     ClauseNode *p_Clause = p_List->first_clause;
     LiteralNode *p_Literal = NULL;
 
+    // 输出参数
     fprintf(p_File, "CNF Parser Output\n%d variable(s) and %d clause(s)\n", p_List->variable_num, p_List->clause_num);
 
+    // 遍历子句
     while (p_Clause != NULL){
-
         p_Literal = p_Clause->first_literal;
 
+        // 遍历文字
         while (p_Literal != NULL){
             fprintf(p_File, "%d ", p_Literal->literal);
             p_Literal = p_Literal->next_literal;
         }
-
         fprintf(p_File, "\n");
 
         p_Clause = p_Clause->next_clause;
-
     }
 
-    printf("Output Successfully!\nPlease check the result in the file \"CNF_Parser_Output.txt\"\n");
-
     fclose(p_File);
+
+    printf("Output Successfully!\nPlease check the result in the file \"CNF_Parser_Output.txt\"\n");
 }
 
 /**
@@ -154,7 +160,9 @@ void PrintFrequency(List *p_List)
     for (int i = 1; i <= p_List->variable_num; i++){
         printf("%d ", p_List->pos_freq[i]);
     }
+
     printf("\n");
+    
     for (int i = 1; i <= p_List->variable_num; i++){
         printf("%d ", p_List->neg_freq[i]);
     }

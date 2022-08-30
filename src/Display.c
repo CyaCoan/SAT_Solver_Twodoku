@@ -9,6 +9,11 @@
  * 
  */
 
+void Color(short x)
+{
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), x);
+}
+
 /**
  * @brief 获取输入的.cnf文件和输出的.res文件的路径
  * 
@@ -38,6 +43,12 @@ void GetPaths(char **path_in, char **path_out)
     strcat(*path_out, suffix);
 }
 
+/**
+ * @brief SAT求解器系统
+ * 
+ * @param p_List 存储CNF的十字链表
+ * @param p_truth_table 变元真值表
+ */
 void SATSolverSystem(List *p_List, bool **p_truth_table)
 {
     char *path_in;
@@ -47,7 +58,6 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
     int op = 1;
     while (op){
         system("cls");
-        printf("\n\n");
         printf("                            SAT Solver\n");
         printf("-------------------------------------------------------------------\n");
         printf("          1.Read CNF        2.Output CNF      3.Solve SAT\n");
@@ -79,7 +89,7 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
 
             case 0:
             ClearList(p_List);
-            return;
+            break;
 
             default:
             printf("Input Error!\n");
@@ -96,7 +106,7 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
  * @param p_truth_table 变元真值表
  * @param twodoku 双数独
  */
-void SolveTwodoku(List *p_List, bool **p_truth_table, Twodoku *twodoku)
+void TwodokuSolvingSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
 {
     if (twodoku->flag == false){
         printf("The board is empty!\n");
@@ -107,7 +117,6 @@ void SolveTwodoku(List *p_List, bool **p_truth_table, Twodoku *twodoku)
     int op = 1;
     while (op){
         system("cls");
-        printf("\n\n");
         printf("                             SolveTDK\n");
         printf("-------------------------------------------------------------------\n");
         printf("          1.Read CNF        2.Output CNF      3.Solve SAT\n");
@@ -132,7 +141,7 @@ void SolveTwodoku(List *p_List, bool **p_truth_table, Twodoku *twodoku)
             break;
 
             case 0:
-            return;
+            break;
 
             default:
             printf("Input Error!\n");
@@ -142,6 +151,127 @@ void SolveTwodoku(List *p_List, bool **p_truth_table, Twodoku *twodoku)
     }
 }
 
+void PlayTwodoku(Twodoku *twodoku)
+{
+    int board = 1;
+    int row;
+    int col;
+    int num;
+
+    Twodoku *temp_twodoku = CopyTwodoku(twodoku);
+
+    while (board){
+        system("cls");
+        PrintTwodoku(temp_twodoku);
+
+        bool flag = true;
+        for (int i = 0; i < 9; i++){
+            for (int j = 0; j < 9; j++){
+                if (abs(temp_twodoku->sudoku_UL[i][j]) != temp_twodoku->ans_UL[i][j] 
+                    || abs(temp_twodoku->sudoku_DR[i][j]) != temp_twodoku->ans_DR[i][j]){
+                    flag = false;
+                }
+            }
+        }
+        if (flag == true){
+            printf("You win!\n");
+            break;
+        }
+
+        printf("    Please input parameters:\n");
+        scanf("%d", &board);
+        if (board == 0){
+            break;
+        }
+        scanf("%d %d %d", &row, &col, &num);
+
+        if (row < 1 || row > 9 || col < 1 || col > 9 || num < 0 || num > 9){
+            printf("Invalid Input!\n");
+            getchar();getchar();
+            continue;
+        }
+
+        if (board == 1){
+            if (temp_twodoku->sudoku_UL[row - 1][col - 1] > 0){
+                printf("Clues can not be operated!\n");
+                getchar();getchar();
+            }else{
+                temp_twodoku->sudoku_UL[row - 1][col - 1] = 0 - num;
+                if (row >= 7 && row <= 9 && col >= 7 && col <= 9){
+                    temp_twodoku->sudoku_DR[row - 7][col - 7] = temp_twodoku->sudoku_UL[row - 1][col - 1];
+                }
+            }
+        }
+
+        if (board == 2){
+            if (temp_twodoku->sudoku_DR[row - 1][col - 1] > 0){
+                printf("Clues can not be operated!\n");
+                getchar();getchar();
+            }else{
+                temp_twodoku->sudoku_DR[row - 1][col - 1] = 0 - num;
+                if (row >= 1 && row <= 3 && col >= 1 && col <= 3){
+                    temp_twodoku->sudoku_UL[row + 5][col + 5] = temp_twodoku->sudoku_DR[row - 1][col - 1];
+                }
+            }
+        }
+    }
+
+    free(temp_twodoku);
+}
+
+void TwodokuPlayingGuide()
+{
+    printf("If you want to fill in numbers, please input 4 parameters in order:\n\n");
+    printf("<board>: 1 for the UL sudoku, 2 for the DR sudoku\n");
+    printf("<row>: 1 to 9, for the row number of the grid\n");
+    printf("<col>: 1 to 9, for the column number of the grid\n");
+    printf("<num>: 0 to 9, for the number to be filled in\n\n");
+    printf("Parameters should be separated by spaces\n\n");
+    printf("If you want to exit, please input 0\n");
+}
+
+void TwodokuPlayingSystem(Twodoku *twodoku)
+{
+    if (twodoku->flag == false){
+        printf("The board is empty!\n");
+        getchar();getchar();
+        return;
+    }
+
+    int op = 1;
+    while (op){
+        system("cls");
+        printf("                             PlayTDK\n");
+        printf("-------------------------------------------------------------------\n");
+        printf("          1.Play            2.Guide           0.Exit\n");
+        printf("-------------------------------------------------------------------\n");
+        printf("    Please choose your operation [0 ~ 2]:\n");
+        printf("    (Please read the guide before playing)\n");
+        scanf("%d", &op);
+        switch (op){
+            case 1:
+            PlayTwodoku(twodoku);
+            getchar();getchar();
+            break;
+
+            case 2:
+            TwodokuPlayingGuide();
+            getchar();getchar();
+            break;
+
+            case 0:
+            break;
+        }
+    }
+}
+
+/**
+ * @brief 双数独系统
+ * 
+ * @param p_List 存储CNF的十字链表
+ * @param p_truth_table 变元真值表
+ * @param twodoku 双数独
+ */
 void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
 {
     p_List->flag = false;
@@ -151,13 +281,12 @@ void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
     int op = 1;
     while (op){
         system("cls");
-        printf("\n\n");
         printf("                             Twodoku\n");
         printf("-------------------------------------------------------------------\n");
         printf("          1.GenerateTDK     2.TDKToCNF        3.SolveTDK\n");
-        printf("          4.CheckAnswer     0.Exit\n");
+        printf("          4.CheckAnswer     5.PlayTDK         0.Exit\n");
         printf("-------------------------------------------------------------------\n");
-        printf("    Please choose your operation [0 ~ 4]:\n");
+        printf("    Please choose your operation [0 ~ 5]:\n");
         scanf("%d", &op);
         switch (op){
             case 1:
@@ -171,7 +300,7 @@ void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
             break;
 
             case 3:
-            SolveTwodoku(p_List, p_truth_table, twodoku);
+            TwodokuSolvingSystem(p_List, p_truth_table, twodoku);
             break;
 
             case 4:
@@ -179,9 +308,13 @@ void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
             getchar();getchar();
             break;
 
+            case 5:
+            TwodokuPlayingSystem(twodoku);
+            break;
+
             case 0:
             ClearList(p_List);
-            return;
+            break;
 
             default:
             printf("Input Error!\n");

@@ -20,7 +20,6 @@ int main()
     int op = 1;
     while (op){
         system("cls");
-        printf("\n\n");
         printf("                               Menu\n");
         printf("-------------------------------------------------------------------\n");
         printf("          1.SAT Solver      2.Twodoku         0.Exit\n");
@@ -37,7 +36,7 @@ int main()
             break;
 
             case 0:
-            return 0;
+            break;
 
             default:
             printf("Input Error!\n");
