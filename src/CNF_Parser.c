@@ -10,6 +10,27 @@
  */
 
 /**
+ * @brief 判断字符串是否为纯数字
+ * 
+ * @param str 字符串
+ * @return true 是纯数字
+ * @return false 不是纯数字
+ */
+bool IsPureNumber(char *str)
+{
+    for (int i = 0; i < strlen(str); i++){
+        if (str[i] == '-' && i == 0){
+            continue;
+        }
+        if (str[i] >= '0' && str[i] <= '9'){
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+
+/**
  * @brief 读取路径对应文件中的CNF并写入十字链表
  * 
  * @param path 输入.cnf路径
@@ -17,15 +38,10 @@
  */
 void ReadCNF(char *path, List *p_List)
 {
-    if (p_List->flag == true){
-        printf("The list is not empty!\n");
-        return;
-    }
-    
     FILE *p_File;
     if ( (p_File = fopen(path, "r")) == NULL ){
         printf("Can't open the file!\n");
-        exit(-1);
+        return;
     }
 
     // 读取.cnf文件注释
@@ -39,7 +55,17 @@ void ReadCNF(char *path, List *p_List)
 
     // 读取参数
     char form[5];
-    fscanf(p_File, "%s %d %d", &form, &p_List->variable_num, &p_List->clause_num);
+    char var_num[20];
+    char cls_num[20];
+    fscanf(p_File, "%s %s %s", &form, &var_num, &cls_num);
+    if (IsPureNumber(var_num) && IsPureNumber(cls_num) 
+        && atoi(var_num) > 0 && atoi(cls_num) > 0){
+        
+        p_List->variable_num = atoi(var_num);
+        p_List->clause_num = atoi(cls_num);
+    }else{
+        printf("There is a read error!\n");
+    }
 
     // 初始化正负文字频度表
     p_List->pos_freq = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
@@ -51,7 +77,6 @@ void ReadCNF(char *path, List *p_List)
     // 建表
     p_List->first_clause = NULL;
     ClauseNode *p_ListTail = NULL;
-    int literal;
 
     for (int i = 0; i < p_List->clause_num; i++){
         // 建子句头结点的链表
@@ -69,7 +94,18 @@ void ReadCNF(char *path, List *p_List)
         p_Clause->first_literal = NULL;
         
         // 建子句
-        while ( fscanf(p_File, "%d", &literal) ){
+        char ltrl[10];
+        int literal;
+        while ( fscanf(p_File, "%s", &ltrl) ){
+            // 读取文字
+            if (IsPureNumber(ltrl)){
+                literal = atoi(ltrl);
+            }else{
+                printf("There is a read error!\n");
+                ClearList(p_List);
+                return;
+            }
+
             if (literal == 0){
                 break;
             }
@@ -148,22 +184,4 @@ void OutputCNF(List *p_List)
     fclose(p_File);
 
     printf("Output Successfully!\nPlease check the result in the file \"CNF_Parser_Output.txt\"\n");
-}
-
-/**
- * @brief 打印频度表
- * 
- * @param p_List 存储CNF的十字链表
- */
-void PrintFrequency(List *p_List)
-{
-    for (int i = 1; i <= p_List->variable_num; i++){
-        printf("%d ", p_List->pos_freq[i]);
-    }
-
-    printf("\n");
-    
-    for (int i = 1; i <= p_List->variable_num; i++){
-        printf("%d ", p_List->neg_freq[i]);
-    }
 }

@@ -102,7 +102,7 @@ List *MergeUnitClause(List *p_List, int v)
  * @return int 第一个文字（选择成功）
  * @return 0（选择失败）
  */
-int SelectLiteral(List *p_List)
+int SelectLiteral_0(List *p_List)
 {
     ClauseNode *p_Clause = p_List->first_clause;
     while (p_Clause != NULL){
@@ -121,7 +121,7 @@ int SelectLiteral(List *p_List)
  * @return int 频度最高的文字（优先选择正文字）
  * @return 0（选择失败）
  */
-int OptimizedSelectLiteral(List *p_List)
+int SelectLiteral_1(List *p_List)
 {
     int most_literal = 0;
     int max_freq = 0;
@@ -145,6 +145,116 @@ int OptimizedSelectLiteral(List *p_List)
     }
 
     return most_literal;
+}
+
+double J(int n)
+{
+    return pow(2.0, (double)(-n));
+}
+
+int SelectLiteral_2(List *p_List)
+{
+    double *weight = (double *)malloc(sizeof(double) * (p_List->variable_num * 2 + 1));
+    for (int i = 0; i <= p_List->variable_num * 2; i++){
+        weight[i] = 0.0;
+    }
+
+    for (ClauseNode *p_Clause = p_List->first_clause; 
+        p_Clause; p_Clause = p_Clause->next_clause){
+
+        for (LiteralNode *p_Literal = p_Clause->first_literal; 
+            p_Literal; p_Literal = p_Literal->next_literal){
+            
+            if (p_Literal->literal > 0){
+                weight[p_Literal->literal] += J(p_Clause->literal_num);
+            }else{
+                weight[p_List->variable_num - p_Literal->literal] += J(p_Clause->literal_num);
+            }
+        }
+    }
+
+    double max_weight = 0.0;
+    int max_literal = 0;
+    for (int i = 1; i <= p_List->variable_num; i++){
+        if (weight[i] + weight[i + p_List->variable_num] > max_weight){
+            max_weight = weight[i] + weight[i + p_List->variable_num];
+            max_literal = i;
+        }
+    }
+    if (weight[max_literal] < weight[max_literal + p_List->variable_num]){
+        max_literal = 0 - max_literal;
+    }
+
+    free(weight);
+    return max_literal;
+}
+
+int SelectLiteral_3(List *p_List)
+{
+    int *mark = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
+    double *weight = (double *)malloc(sizeof(double) * (p_List->variable_num * 2 + 1));
+    for (int i = 0; i <= p_List->variable_num; i++){
+        mark[i] = 0;
+    }
+    for (int i = 0; i <= p_List->variable_num * 2; i++){
+        weight[i] = 0.0;
+    }
+
+    for (ClauseNode *p_Clause = p_List->first_clause; 
+        p_Clause; p_Clause = p_Clause->next_clause){
+
+        for (LiteralNode *p_Literal = p_Clause->first_literal; 
+            p_Literal; p_Literal = p_Literal->next_literal){
+            
+            if (p_Literal->literal < 0){
+                break;
+            }else if (p_Literal->next_literal == NULL){
+
+                for (LiteralNode *p_TempLiteral = p_Clause->first_literal; 
+                    p_TempLiteral; p_TempLiteral = p_TempLiteral->next_literal){
+                    
+                    mark[p_TempLiteral->literal] = 1;
+                }
+                break;
+            }
+        }
+    }
+
+    for (ClauseNode *p_Clause = p_List->first_clause; 
+        p_Clause; p_Clause = p_Clause->next_clause){
+
+        for (LiteralNode *p_Literal = p_Clause->first_literal; 
+            p_Literal; p_Literal = p_Literal->next_literal){
+            
+            if (mark[abs(p_Literal->literal)]){
+                if (p_Literal->literal > 0){
+                    weight[p_Literal->literal] += J(p_Clause->literal_num);
+                }else{
+                    weight[p_List->variable_num - p_Literal->literal] += J(p_Clause->literal_num);
+                }
+            }
+        }
+    }
+
+    free(mark);
+    double max_weight = 0.0;
+    int max_literal = 0;
+    for (int i = 1; i <= p_List->variable_num; i++){
+        if (weight[i] + weight[i + p_List->variable_num] > max_weight){
+            max_weight = weight[i] + weight[i + p_List->variable_num];
+            max_literal = i;
+        }
+    }
+    if (weight[max_literal] < weight[max_literal + p_List->variable_num]){
+        max_literal = 0 - max_literal;
+    }
+
+    free(weight);
+    if (max_literal == 0){
+        max_literal = SelectLiteral_2(p_List);
+    }
+
+    return max_literal;
 }
 
 /**
@@ -351,8 +461,10 @@ void ClearList(List *p_List)
     p_List->first_clause = NULL;
     p_List->clause_num = 0;
     p_List->flag = false;
-    free(p_List->pos_freq);
-    free(p_List->neg_freq);
+    if (p_List->pos_freq != NULL && p_List->neg_freq != NULL){
+        free(p_List->pos_freq);
+        free(p_List->neg_freq);
+    }
 }
 
 /**
@@ -420,8 +532,10 @@ status DPLL(char *path_out, List *p_List, bool **p_truth_table, int mode, clock_
 
     // 不同的文字选取策略
     int v;
-    if (mode == 0) v = SelectLiteral(p_List);
-    if (mode == 1) v = OptimizedSelectLiteral(p_List);
+    if (mode == 0) v = SelectLiteral_0(p_List);
+    if (mode == 1) v = SelectLiteral_1(p_List);
+    if (mode == 2) v = SelectLiteral_2(p_List);
+    if (mode == 3) v = SelectLiteral_3(p_List);
     // printf("%d\n", v);
 
     // 复制表，以免破坏原表
@@ -440,113 +554,4 @@ status DPLL(char *path_out, List *p_List, bool **p_truth_table, int mode, clock_
     ClearList(p_TempList);
     free(p_TempList);
     return res2;
-}
-
-/*
-bool OptimizedDPLL(List *p_List, bool *truth_table)
-{
-    List *stack[MAX] = {NULL};
-    List *lists[MAX] = {NULL};
-    List *p_TempList = NULL;
-
-    int state;
-    int cnt = 0;
-    int top = 0;
-    int v[MAX];
-
-    stack[top++] = p_List;
-    while (top){
-        while ((p_List = stack[top - 1]) && (state = UnitClausePropagation(p_List, truth_table)) == NORMAL){
-            p_TempList = CopyList(p_List);
-            lists[cnt] = p_TempList;
-
-            v[cnt] = OptimizedSelectLiteral(p_List);
-            p_List = MergeUnitClause(p_List, v[cnt]);
-
-            stack[top++] = p_List;
-            cnt++;
-        }
-        if (state == true){
-            return true;
-        }
-        top--;
-        cnt--;
-        DestroyList(p_List);
-        while (top){
-            p_List = lists[cnt];
-            top--;
-            stack[top++] = MergeUnitClause(p_List, 0 - v[cnt]);
-        }
-    }
-    return false;
-}
-*/
-
-/**
- * @brief 解决SAT问题
- * 
- * @param path_out 输出.res文件路径
- * @param p_List 存储CNF的十字链表
- * @param p_truth_table 变元真值表
- * @param mode 模式（0为不优化，1为优化）
- */
-void SolveSAT(char *path_out, List *p_List, bool **p_truth_table, int mode)
-{
-    if (p_List->flag == false){
-        printf("The list is empty!\n");
-        return;
-    }
-
-    // 复制表，以免破坏原表
-    List *p_TempList = CopyList(p_List);
-    *p_truth_table = (bool *)malloc(sizeof(bool) * (p_List->variable_num + 1));
-
-    // 记录DPLL算法所用时间
-    clock_t start = clock();
-    status res = DPLL(path_out, p_TempList, p_truth_table, mode, start);
-    clock_t end = clock();
-
-    // 销毁副本
-    ClearList(p_TempList);
-    free(p_TempList);
-
-    // 结果输出
-    FILE *p_File;
-    if ((p_File = fopen(path_out, "w")) == NULL){
-        printf("Can't open the file!\n");
-        exit(-1);
-    }
-
-    if (res == TLE){
-
-        fprintf(p_File, "s -1\nv \nt %.2lf\n", (double)TIME_LIMIT * 1000.0);
-        printf("Time Limit Exceeded!\n");
-
-    }else{
-
-        if (res == SAT){
-            fprintf(p_File, "s 1\nv ");
-            for (int i = 1; i <= p_List->variable_num; i++){
-                fprintf(p_File, "%d ", ((*p_truth_table)[i] ? 1 : -1) * i);
-            }
-            printf("Satisfiable!\n");
-        }
-
-        if (res == UNSAT){
-            fprintf(p_File, "s 0\nv");
-            printf("Unsatisfiable!\n");
-        }
-
-        fprintf(p_File, "\n");
-
-        double time = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-        printf("time : %.2lfms\n", time);
-        fprintf(p_File, "t %.2lf\n", time);
-
-    }
-
-    fclose(p_File);
-
-    printf("The result has been written in the .res file, which has the same name with the .cnf file.\n");
-    printf("Please check the result in the folder \"res\".\n");
 }

@@ -81,6 +81,27 @@ enum colors{BLACK, BLUE, GREEN, LAKE_BLUE,
             LIGHT_RED, LIGHT_PURPLE, LIGHT_YELLOW, LIGHT_WHITE, 
             BACKGROUND};
 
+bool IsPureNumber(char *str);
+void ReadCNF(char *path, List *p_List);
+void OutputCNF(List *p_List);
+
+int GetUnitClause(List *p_List);
+bool IsEmptyCNF(List *p_List);
+bool HaveEmptyClause(List *p_List);
+List *MergeUnitClause(List *p_List, int v);
+int SelectLiteral_0(List *p_List);
+int SelectLiteral_1(List *p_List);
+double J(int n);
+int SelectLiteral_2(List *p_List);
+int SelectLiteral_3(List *p_List);
+ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause);
+void DeleteLiteral(List *p_List, ClauseNode *p_Clause, LiteralNode *p_Literal);
+void SimplifyCNF(List *p_List, int unit_clause);
+List *CopyList(List *p_List);
+void ClearList(List *p_List);
+status UnitClausePropagation(List *p_List, bool **p_truth_table, clock_t start);
+status DPLL(char *path_out, List *p_List, bool **p_truth_table, int mode, clock_t start);
+
 void SetZeros(int (*sudoku)[ROW][COL]);
 void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num);
 void PrintSudoku(int (*sudoku)[ROW][COL]);
@@ -107,6 +128,7 @@ bool CheckAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku);
 
 void Color(short x);
 void GetPaths(char **path_in, char **path_out);
+void SolveSAT(char *path_out, List *p_List, bool **p_truth_table);
 void SATSolverSystem(List *p_List, bool **p_truth_table);
 void SolveTwodoku(List *p_List, bool **p_truth_table, Twodoku *twodoku);
 void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku);

@@ -53,29 +53,6 @@ void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
 }
 
 /**
- * @brief 打印数独
- * 
- * @param sudoku 数独
- */
-void PrintSudoku(int (*sudoku)[ROW][COL])
-{
-    for (int i = 0; i < 9; i++){
-        for (int j = 0; j < 9; j++){
-            SetColorAndPrintNumber(sudoku, i, j, (*sudoku)[i][j]);
-            if (j == 2 || j == 5){
-                printf(" ");
-            }
-
-        }
-        printf("\n");
-        if (i == 2 || i == 5 || i == 8){
-            printf("\n");
-        }
-    }
-    Color(WHITE);
-}
-
-/**
  * @brief 打印双数独
  * 
  * @param twodoku 双数独
@@ -119,7 +96,7 @@ Twodoku *CopyTwodoku(Twodoku *twodoku)
     temp_twodoku->clue_num = twodoku->clue_num;
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
-            temp_twodoku->sudoku_UL[i][j] = twodoku->sudoku_DR[i][j];
+            temp_twodoku->sudoku_UL[i][j] = twodoku->sudoku_UL[i][j];
             temp_twodoku->sudoku_DR[i][j] = twodoku->sudoku_DR[i][j];
             temp_twodoku->ans_UL[i][j] = twodoku->ans_UL[i][j];
             temp_twodoku->ans_DR[i][j] = twodoku->ans_DR[i][j];
