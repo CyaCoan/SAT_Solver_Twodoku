@@ -1,1 +1,2 @@
-# SAT_Solver_Twodoku
+# SAT Solver & Twodoku
+This project is not completed.
