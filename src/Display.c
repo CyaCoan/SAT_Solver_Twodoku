@@ -9,6 +9,11 @@
  * 
  */
 
+/**
+ * @brief 设置输出颜色
+ * 
+ * @param x 颜色对应参数
+ */
 void Color(short x)
 {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), x);
@@ -17,18 +22,24 @@ void Color(short x)
 /**
  * @brief 获取输入的.cnf文件和输出的.res文件的路径
  * 
+ * @param f_name 输入.cnf文件名
  * @param path_in 输入.cnf路径
  * @param path_out 输出.res路径
+ * @param p_List 存储CNF的十字链表
  */
-void GetPaths(char **path_in, char **path_out)
+void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
 {
     char *dir_in = "../test/";
     char *dir_out = "../res/";
     char *suffix = ".res";
 
     char file_name[FILE_NAME_SIZE];
-    printf("    Please input your file name:\n");
-    scanf("%s", &file_name);
+    if (f_name == NULL){
+        printf("    Please input your file name:\n");
+        scanf("%s", &file_name);
+    }else{
+        strcpy(file_name, f_name);
+    }
 
     *path_in = (char *)malloc(sizeof(char) * PATH_SIZE);
     strcpy(*path_in, dir_in);
@@ -38,6 +49,10 @@ void GetPaths(char **path_in, char **path_out)
     int i = strlen(file_name) - 1;
     while (file_name[i] != '.') i--;
     file_name[i] = '\0';
+
+    p_List->name = (char *)malloc(sizeof(char) * (strlen(file_name) + 1));
+    strcpy(p_List->name, file_name);
+
     strcpy(*path_out, dir_out);
     strcat(*path_out, file_name);
     strcat(*path_out, suffix);
@@ -51,10 +66,10 @@ void GetPaths(char **path_in, char **path_out)
  * @param p_truth_table 变元真值表
  * @param mode 模式（0为不优化，1为优化）
  */
-void SolveSAT(char *path_out, List *p_List, bool **p_truth_table)
+void SATSolvingSystem(char *path_out, List *p_List, bool **p_truth_table)
 {
     if (p_List->flag == false){
-        printf("The list is empty!\n");
+        printf("The .cnf file has not been read!\n");
         getchar();getchar();
         return;
     }
@@ -64,69 +79,16 @@ void SolveSAT(char *path_out, List *p_List, bool **p_truth_table)
         system("cls");
         printf("                           Solve SAT\n");
         printf("-------------------------------------------------------------------\n");
-        printf("          1.MAMS         2.two-sided JW      3.pos two-sided JW\n");
+        printf("          1.MAMS         2.Two-sided JW      3.Pos Two-sided JW\n");
         printf("          0.Exit\n");
         printf("-------------------------------------------------------------------\n");
         printf("    Please choose your operation [0 ~ 3]:\n");
         scanf("%d", &op);
 
-        if (op == 0){
-            break;
+        if (op){
+            DPLLSolveSAT(path_out, p_List, p_truth_table, op);
+            getchar();getchar();
         }
-        
-        // 复制表，以免破坏原表
-        List *p_TempList = CopyList(p_List);
-        *p_truth_table = (bool *)malloc(sizeof(bool) * (p_List->variable_num + 1));
-
-        // 记录DPLL算法所用时间
-        clock_t start = clock();
-        status res = DPLL(path_out, p_TempList, p_truth_table, op, start);
-        clock_t end = clock();
-
-        // 销毁副本
-        ClearList(p_TempList);
-        free(p_TempList);
-
-        // 结果输出
-        FILE *p_File;
-        if ((p_File = fopen(path_out, "w")) == NULL){
-            printf("Can't open the file!\n");
-            exit(-1);
-        }
-
-        if (res == TLE){
-
-            fprintf(p_File, "s -1\nv \nt %.2lf\n", (double)TIME_LIMIT * 1000.0);
-            printf("Time Limit Exceeded!\n");
-
-        }else{
-
-            if (res == SAT){
-                fprintf(p_File, "s 1\nv ");
-                for (int i = 1; i <= p_List->variable_num; i++){
-                    fprintf(p_File, "%d ", ((*p_truth_table)[i] ? 1 : -1) * i);
-                }
-                printf("Satisfiable!\n");
-            }
-
-            if (res == UNSAT){
-                fprintf(p_File, "s 0\nv");
-                printf("Unsatisfiable!\n");
-            }
-
-            fprintf(p_File, "\n");
-
-            double time = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-            printf("time : %.2lfms\n", time);
-            fprintf(p_File, "t %.2lf\n", time);
-
-        }
-
-        fclose(p_File);
-
-        printf("The result has been written in the .res file, which has the same name with the .cnf file.\n");
-        printf("Please check the result in the folder \"res\".\n");
-        getchar();getchar();
     }
 }
 
@@ -140,7 +102,6 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
 {
     char *path_in;
     char *path_out;
-    p_List->flag = false;
 
     int op = 1;
     while (op){
@@ -148,28 +109,37 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
         printf("                            SAT Solver\n");
         printf("-------------------------------------------------------------------\n");
         printf("          1.Read CNF        2.Output CNF      3.Solve SAT\n");
-        printf("          0.Exit\n");
+        printf("          4.Check Answer    0.Exit\n");
         printf("-------------------------------------------------------------------\n");
-        printf("    Please choose your operation [0 ~ 3]:\n");
+        printf("    Please choose your operation [0 ~ 4]:\n");
         scanf("%d", &op);
         switch (op){
             case 1:
-            GetPaths(&path_in, &path_out);
+            GetPaths(NULL, &path_in, &path_out, p_List);
             ReadCNF(path_in, p_List);
+            printf("Read Successfully!\n");
             getchar();getchar();
             break;
 
             case 2:
             OutputCNF(p_List);
+            printf("Output Successfully!\nPlease check the result in the file \"../CNF_Parser_Output.txt\"\n");
             getchar();getchar();
             break;
 
             case 3:
-            SolveSAT(path_out, p_List, p_truth_table);
+            SATSolvingSystem(path_out, p_List, p_truth_table);
+            break;
+
+            case 4:
+            CheckSATAnswer(p_List, p_truth_table);
+            getchar();getchar();
             break;
 
             case 0:
             ClearList(p_List);
+            free(p_truth_table);
+            p_truth_table = NULL;
             break;
 
             default:
@@ -181,140 +151,43 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
 }
 
 /**
- * @brief 求解双数独
+ * @brief 生成双数独初局系统
  * 
- * @param p_List 存储CNF的十字链表
- * @param p_truth_table 变元真值表
  * @param twodoku 双数独
  */
-void TwodokuSolvingSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
+void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table)
 {
-    if (twodoku->flag == false){
-        printf("The board is empty!\n");
-        getchar();getchar();
-        return;
-    }
-
     int op = 1;
     while (op){
         system("cls");
-        printf("                             SolveTDK\n");
+        printf("                           Generate TDK\n");
         printf("-------------------------------------------------------------------\n");
-        printf("          1.Read CNF        2.Output CNF      3.Solve SAT\n");
-        printf("          0.Exit\n");
+        printf("          1.Easy             2.Medium            3.Hard\n");
+        printf("          4.Very Hard        0.Exit\n");
         printf("-------------------------------------------------------------------\n");
-        printf("    Please choose your operation [0 ~ 3]:\n");
+        printf("    Please choose your operation [0 ~ 4]:\n");
         scanf("%d", &op);
-        switch (op){
-            case 1:
-            ReadCNF("../test/Twodoku.cnf", p_List);
-            getchar();getchar();
-            break;
 
-            case 2:
-            OutputCNF(p_List);
+        if (op){
+            if (*p_truth_table != NULL){
+                free(*p_truth_table);
+                *p_truth_table = NULL;
+            }
+            GenerateTwodoku(twodoku, op);
             getchar();getchar();
-            break;
-
-            case 3:
-            SolveSAT("../res/Twodoku.res", p_List, p_truth_table);
-            getchar();getchar();
-            break;
-
-            case 0:
-            break;
-
-            default:
-            printf("Input Error!\n");
-            getchar();getchar();
-            break;
         }
     }
 }
 
-void PlayTwodoku(Twodoku *twodoku)
-{
-    int board = 1;
-    int row;
-    int col;
-    int num;
-
-    Twodoku *temp_twodoku = CopyTwodoku(twodoku);
-
-    while (board){
-        system("cls");
-        PrintTwodoku(temp_twodoku);
-
-        bool flag = true;
-        for (int i = 0; i < 9; i++){
-            for (int j = 0; j < 9; j++){
-                if (abs(temp_twodoku->sudoku_UL[i][j]) != temp_twodoku->ans_UL[i][j] 
-                    || abs(temp_twodoku->sudoku_DR[i][j]) != temp_twodoku->ans_DR[i][j]){
-                    flag = false;
-                }
-            }
-        }
-        if (flag == true){
-            printf("You win!\n");
-            break;
-        }
-
-        printf("    Please input parameters:\n");
-        scanf("%d", &board);
-        if (board == 0){
-            break;
-        }
-        scanf("%d %d %d", &row, &col, &num);
-
-        if (row < 1 || row > 9 || col < 1 || col > 9 || num < 0 || num > 9){
-            printf("Invalid Input!\n");
-            getchar();getchar();
-            continue;
-        }
-
-        if (board == 1){
-            if (temp_twodoku->sudoku_UL[row - 1][col - 1] > 0){
-                printf("Clues can not be operated!\n");
-                getchar();getchar();
-            }else{
-                temp_twodoku->sudoku_UL[row - 1][col - 1] = 0 - num;
-                if (row >= 7 && row <= 9 && col >= 7 && col <= 9){
-                    temp_twodoku->sudoku_DR[row - 7][col - 7] = temp_twodoku->sudoku_UL[row - 1][col - 1];
-                }
-            }
-        }
-
-        if (board == 2){
-            if (temp_twodoku->sudoku_DR[row - 1][col - 1] > 0){
-                printf("Clues can not be operated!\n");
-                getchar();getchar();
-            }else{
-                temp_twodoku->sudoku_DR[row - 1][col - 1] = 0 - num;
-                if (row >= 1 && row <= 3 && col >= 1 && col <= 3){
-                    temp_twodoku->sudoku_UL[row + 5][col + 5] = temp_twodoku->sudoku_DR[row - 1][col - 1];
-                }
-            }
-        }
-    }
-
-    free(temp_twodoku);
-}
-
-void TwodokuPlayingGuide()
-{
-    printf("If you want to fill in numbers, please input 4 parameters in order:\n\n");
-    printf("<board>: 1 for the UL sudoku, 2 for the DR sudoku\n");
-    printf("<row>: 1 to 9, for the row number of the grid\n");
-    printf("<col>: 1 to 9, for the column number of the grid\n");
-    printf("<num>: 0 to 9, for the number to be filled in\n\n");
-    printf("Parameters should be separated by spaces\n\n");
-    printf("If you want to exit, please input 0\n");
-}
-
+/**
+ * @brief 双数独游戏系统
+ * 
+ * @param twodoku 双数独
+ */
 void TwodokuPlayingSystem(Twodoku *twodoku)
 {
-    if (twodoku->flag == false){
-        printf("The board is empty!\n");
+    if (twodoku->flag_gen == false){
+        printf("The twodoku has not been generated!\n");
         getchar();getchar();
         return;
     }
@@ -354,46 +227,48 @@ void TwodokuPlayingSystem(Twodoku *twodoku)
  */
 void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
 {
-    p_List->flag = false;
-    twodoku->flag = false;
-    *p_truth_table = NULL;
-    
+    char *path_in;
+    char *path_out;
+
     int op = 1;
     while (op){
         system("cls");
         printf("                             Twodoku\n");
         printf("-------------------------------------------------------------------\n");
-        printf("          1.GenerateTDK     2.TDKToCNF        3.SolveTDK\n");
-        printf("          4.CheckAnswer     5.PlayTDK         0.Exit\n");
+        printf("          1.Generate TDK    2.Solve TDK       3.Check Answer\n");
+        printf("          4.Play TDK        0.Exit\n");
         printf("-------------------------------------------------------------------\n");
-        printf("    Please choose your operation [0 ~ 5]:\n");
+        printf("    Please choose your operation [0 ~ 4]:\n");
         scanf("%d", &op);
         switch (op){
             case 1:
-            GenerateTwodoku(twodoku);
-            getchar();getchar();
+            TwodokuGeneratingSystem(twodoku, p_truth_table);
+            TwodokuToCNF(twodoku);
+            GetPaths("Twodoku.cnf", &path_in, &path_out, p_List);
+            ReadCNF(path_in, p_List);
+            OutputCNF(p_List);
             break;
 
             case 2:
-            TwodokuToCNF(twodoku);
-            getchar();getchar();
+            SATSolvingSystem(path_out, p_List, p_truth_table);
             break;
 
             case 3:
-            TwodokuSolvingSystem(p_List, p_truth_table, twodoku);
-            break;
-
-            case 4:
-            CheckAnswer(p_List, p_truth_table, twodoku);
+            CheckTwodokuAnswer(p_List, p_truth_table, twodoku);
             getchar();getchar();
             break;
 
-            case 5:
+            case 4:
             TwodokuPlayingSystem(twodoku);
             break;
 
             case 0:
             ClearList(p_List);
+            twodoku->flag_cnf = false;
+            free(twodoku->tdk);
+            free(twodoku->ans);
+            free(p_truth_table);
+            p_truth_table = NULL;
             break;
 
             default:

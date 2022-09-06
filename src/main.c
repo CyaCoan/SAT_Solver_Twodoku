@@ -14,8 +14,15 @@
 int main()
 {
     List L;
+    L.flag = false;
+
     Twodoku T;
-    bool *truth_table;
+    T.flag_gen = false;
+    T.flag_cnf = false;
+    T.tdk = (Board *)malloc(sizeof(Board));
+    T.ans = (Board *)malloc(sizeof(Board));
+    
+    bool *truth_table = NULL;
     
     int op = 1;
     while (op){

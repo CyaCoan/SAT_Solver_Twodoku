@@ -65,13 +65,7 @@ void ReadCNF(char *path, List *p_List)
         p_List->clause_num = atoi(cls_num);
     }else{
         printf("There is a read error!\n");
-    }
-
-    // 初始化正负文字频度表
-    p_List->pos_freq = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
-    p_List->neg_freq = (int *)malloc(sizeof(int) * (p_List->variable_num + 1));
-    for (int i = 0; i <= p_List->variable_num; i++){
-        p_List->pos_freq[i] = p_List->neg_freq[i] = 0;
+        return;
     }
 
     // 建表
@@ -110,14 +104,8 @@ void ReadCNF(char *path, List *p_List)
                 break;
             }
 
-            // 更新子句的文字数和文字频度表
+            // 更新子句的文字数
             p_Clause->literal_num++;
-
-            if (literal > 0){
-                p_List->pos_freq[literal]++;
-            }else{
-                p_List->neg_freq[0 - literal]++;
-            }
 
             // 建文字节点的链表
             LiteralNode *p_Literal = (LiteralNode *)malloc(sizeof(LiteralNode));
@@ -138,8 +126,6 @@ void ReadCNF(char *path, List *p_List)
 
     p_List->flag = true;
     fclose(p_File);
-
-    printf("Read Successfully!\n");
 }
 
 /**
@@ -150,12 +136,12 @@ void ReadCNF(char *path, List *p_List)
 void OutputCNF(List *p_List)
 {
     if (p_List->flag == false){
-        printf("The list is empty!\n");
+        printf("The .cnf file has not been read!\n");
         return;
     }
 
     FILE *p_File;
-    char *file_name = "CNF_Parser_Output.txt";
+    char *file_name = "../CNF_Parser_Output.txt";
     if ( (p_File = fopen(file_name, "w")) == NULL){
         printf("Can't open the file!\n");
         exit(-1);
@@ -182,6 +168,4 @@ void OutputCNF(List *p_List)
     }
 
     fclose(p_File);
-
-    printf("Output Successfully!\nPlease check the result in the file \"CNF_Parser_Output.txt\"\n");
 }

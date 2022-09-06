@@ -23,65 +23,104 @@ void SetZeros(int (*sudoku)[ROW][COL])
     }
 }
 
+/**
+ * @brief 设定颜色并打印数字
+ * 
+ * @param sudoku 数独
+ * @param row 行号
+ * @param col 列号
+ * @param num 数字
+ */
 void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
 {
+    // 首先清除所在位置的数字，以便检查是否有数字冲突
     (*sudoku)[row][col] = 0;
-    if (num < 0){
-        if (CheckNumber(sudoku, row, col, 0 - num) == false){
-            Color(BLACK + YELLOW * BACKGROUND);
-        }else{
+
+    if (num < 0){ // 数字为负，代表填入的数
+        if (CheckNumber(sudoku, row, col, 0 - num) == false){ // 有冲突，为黄字
+            Color(YELLOW);
+        }else{ // 无冲突，为浅绿字
             Color(LIGHT_GREEN);
         }
         printf("%d", 0 - num);
-        Color(WHITE);
-        printf(" ");
+        Color(WHITE);printf(" ");
     }else{
-        if(num > 0){
-            if (CheckNumber(sudoku, row, col, num) == false){
-                Color(BLACK + LIGHT_RED * BACKGROUND);
-            }else{
-                Color(LIGHT_BLUE);
+        if(num > 0){ // 数字为正，代表原有的提示数
+            if (CheckNumber(sudoku, row, col, num) == false){ // 有冲突，为红字
+                Color(RED);
+            }else{ // 无冲突，为亮白字
+                Color(LIGHT_WHITE);
             }
-        }else{
+        }else{ // 数字为零，代表空格，为灰字
             Color(GREY);
         }
         printf("%d", num);
-        Color(WHITE);
-        printf(" ");
+        Color(WHITE);printf(" ");
     }
+
+    // 将数字放回原位
     (*sudoku)[row][col] = num;
 }
 
 /**
  * @brief 打印双数独
  * 
- * @param twodoku 双数独
+ * @param twodoku 双数独本体
  */
-void PrintTwodoku(Twodoku *twodoku)
+void PrintTwodoku(Board *tdk)
 {
-    printf("The UL Sudoku\t\t");
-    printf("The DR Sudoku\n");
+    // 打印标题
+    printf("\n");
+    Color(LIGHT_PURPLE);printf("1");
+    Color(WHITE);printf(" The UL Sudoku");printf("\t\t  ");
+    Color(LIGHT_PURPLE);printf("2");
+    Color(WHITE);printf(" The DR Sudoku");printf("\n");
 
+    // 打印列号
+    printf("  ");
+    for (int i = 1; i <= 9; i++){
+        Color(LIGHT_PURPLE);printf("%d", i);
+        Color(WHITE);printf(" ");
+        if (i == 3 || i == 6){
+            printf(" ");
+        }
+    }
+    printf("    ");
+
+    printf("  ");
+    for (int i = 1; i <= 9; i++){
+        Color(LIGHT_PURPLE);printf("%d", i);
+        Color(WHITE);printf(" ");
+        if (i == 3 || i == 6){
+            printf(" ");
+        }
+    }
+    printf("\n");
+
+    // 打印双数独本体
     for (int i = 0; i < 9; i++){
+        // 打印行号
+        Color(LIGHT_PURPLE);printf("%d", i + 1);
+        Color(WHITE);printf(" ");
         for (int j = 0; j < 9; j++){
-            SetColorAndPrintNumber(&twodoku->sudoku_UL, i, j, twodoku->sudoku_UL[i][j]);
+            SetColorAndPrintNumber(&tdk->sudoku_UL, i, j, tdk->sudoku_UL[i][j]);
             if (j == 2 || j == 5){
                 printf(" ");
             }
-
         }
+        printf("    ");
 
-        printf("\t");
-
+        // 打印行号
+        Color(LIGHT_PURPLE);printf("%d", i + 1);
+        Color(WHITE);printf(" ");
         for (int j = 0; j < 9; j++){
-            SetColorAndPrintNumber(&twodoku->sudoku_DR, i, j, twodoku->sudoku_DR[i][j]);
+            SetColorAndPrintNumber(&tdk->sudoku_DR, i, j, tdk->sudoku_DR[i][j]);
             if (j == 2 || j == 5){
                 printf(" ");
             }
-
         }
-
         printf("\n");
+
         if (i == 2 || i == 5 || i == 8){
             printf("\n");
         }
@@ -89,17 +128,26 @@ void PrintTwodoku(Twodoku *twodoku)
     Color(WHITE);
 }
 
+/**
+ * @brief 复制双数独
+ * 
+ * @param twodoku 双数独
+ * @return Twodoku* 双数独的副本
+ */
 Twodoku *CopyTwodoku(Twodoku *twodoku)
 {
     Twodoku *temp_twodoku = (Twodoku *)malloc(sizeof(Twodoku));
-    temp_twodoku->flag = twodoku->flag;
+    temp_twodoku->flag_gen = twodoku->flag_gen;
+    temp_twodoku->flag_cnf = twodoku->flag_cnf;
     temp_twodoku->clue_num = twodoku->clue_num;
+    temp_twodoku->tdk = (Board *)malloc(sizeof(Board));
+    temp_twodoku->ans = (Board *)malloc(sizeof(Board));
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
-            temp_twodoku->sudoku_UL[i][j] = twodoku->sudoku_UL[i][j];
-            temp_twodoku->sudoku_DR[i][j] = twodoku->sudoku_DR[i][j];
-            temp_twodoku->ans_UL[i][j] = twodoku->ans_UL[i][j];
-            temp_twodoku->ans_DR[i][j] = twodoku->ans_DR[i][j];
+            temp_twodoku->tdk->sudoku_UL[i][j] = twodoku->tdk->sudoku_UL[i][j];
+            temp_twodoku->tdk->sudoku_DR[i][j] = twodoku->tdk->sudoku_DR[i][j];
+            temp_twodoku->ans->sudoku_UL[i][j] = twodoku->ans->sudoku_UL[i][j];
+            temp_twodoku->ans->sudoku_DR[i][j] = twodoku->ans->sudoku_DR[i][j];
         }
     }
     return temp_twodoku;
@@ -121,6 +169,8 @@ int *Shuffle(const int *arr, int len, unsigned int seed)
         temp_arr[i] = arr[i];
     }
 
+    // 因为此函数被调用的时间间隔太短，随机数种子未发生变化
+    // 需要加上额外的种子以生成不同的随机数序列
     srand(time(NULL) + seed);
     for (int i = 0; i < len; i++){
         int j = rand() % len;
@@ -146,11 +196,13 @@ int *Shuffle(const int *arr, int len, unsigned int seed)
 bool CheckNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
 {
     if (num != 0){
+        // 行列检查
         for (int i = 0; i < 9; i++){
             if (abs((*sudoku)[i][col]) == num || abs((*sudoku)[row][i]) == num){
                 return false;
             }
         }
+        // 宫检查
         int block_row = row / 3;
         int block_col = col / 3;
         for (int i = 0; i < 3; i++){
@@ -208,21 +260,24 @@ void CopyOverlappedBlock(int (*sudoku_UL)[ROW][COL], int (*sudoku_DR)[ROW][COL])
  */
 bool FillNumbers(int (*sudoku)[ROW][COL], int pos, int mode)
 {
+    // 搜索完毕，返回
     if (pos == 81){
         return true;
     }
 
     int row = pos / 9;
     int col = pos % 9;
+    // 已经填数，跳过
     if ((*sudoku)[row][col] != 0){
         return FillNumbers(sudoku, pos + 1, mode);
     }
 
+    // 升序搜索
     if (mode == 0){
         for (int i = 1; i <= 9; i++){
             if (CheckNumber(sudoku, row, col, i)){
                 (*sudoku)[row][col] = i;
-                if (FillNumbers(sudoku, pos + 1, mode)){
+                if (FillNumbers(sudoku, pos + 1, mode) == true){
                     return true;
                 }
                 (*sudoku)[row][col] = 0;
@@ -230,11 +285,12 @@ bool FillNumbers(int (*sudoku)[ROW][COL], int pos, int mode)
         }
     }
 
+    // 降序搜索
     if (mode == 1){
         for (int i = 9; i >= 1; i--){
             if (CheckNumber(sudoku, row, col, i)){
                 (*sudoku)[row][col] = i;
-                if (FillNumbers(sudoku, pos + 1, mode)){
+                if (FillNumbers(sudoku, pos + 1, mode) == true){
                     return true;
                 }
                 (*sudoku)[row][col] = 0;
@@ -254,8 +310,8 @@ void SaveAnswer(Twodoku *twodoku)
 {
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
-            twodoku->ans_UL[i][j] = twodoku->sudoku_UL[i][j];
-            twodoku->ans_DR[i][j] = twodoku->sudoku_DR[i][j];
+            twodoku->ans->sudoku_UL[i][j] = twodoku->tdk->sudoku_UL[i][j];
+            twodoku->ans->sudoku_DR[i][j] = twodoku->tdk->sudoku_DR[i][j];
         }
     }
 }
@@ -279,6 +335,9 @@ bool ConsistentWithAnswer(int sudoku[ROW][COL], int ans[ROW][COL])
         }
     }
 
+    // 从升序和降序两个方向搜索数独的答案
+    // 如果数独有多解，则必有至少一个方向搜索出的答案与原答案不同
+    // 此种检验方法可保证数独有唯一解
     FillNumbers(&sud1, 0, 0);
     FillNumbers(&sud2, 0, 1);
 
@@ -301,15 +360,17 @@ bool ConsistentWithAnswer(int sudoku[ROW][COL], int ans[ROW][COL])
  * @return true 挖洞成功
  * @return false 挖洞超时
  */
-bool DigHoles(Twodoku *twodoku, clock_t start)
+bool DigHoles(Twodoku *twodoku, clock_t start, int hole_num)
 {
-    int hole_num = 35;
-
     SaveAnswer(twodoku);
     
     srand(time(NULL));
+    // 挖洞数的上下浮动
+    hole_num += (rand() % 7 - 3);
 
+    int hole_cnt = 0;
     for (int i = 0; i < hole_num; i++){
+        // 挖洞超过时限，则挖洞失败
         if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_TIME_LIMIT){
             return false;
         }
@@ -318,40 +379,63 @@ bool DigHoles(Twodoku *twodoku, clock_t start)
         int row = pos / 9;
         int col = pos % 9;
 
-        if (twodoku->sudoku_UL[row][col] == 0){
+        // 已经挖洞的格子不能再挖
+        if (twodoku->tdk->sudoku_UL[row][col] == 0){
+            i--;
+            continue;
+        }
+        
+        int num = twodoku->tdk->sudoku_UL[row][col];
+        twodoku->tdk->sudoku_UL[row][col] = 0;
+        // 挖洞后有多解的格子不能挖
+        if (ConsistentWithAnswer(twodoku->tdk->sudoku_UL, twodoku->ans->sudoku_UL) == false){
+            twodoku->tdk->sudoku_UL[row][col] = num;
+            i--;
+        }
+
+        // 记录左上数独第九宫的挖洞数
+        if (row > 5 && col > 5){
+            hole_cnt++;
+        }
+    }
+
+    // 复制重复宫，之后不再另挖洞
+    CopyOverlappedBlock(&twodoku->tdk->sudoku_UL, &twodoku->tdk->sudoku_DR);
+
+    for (int i = 0; i < hole_num - hole_cnt; i++){
+        // 挖洞超过时限，则挖洞失败
+        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_TIME_LIMIT){
+            return false;
+        }
+
+        int pos = rand() % 81;
+        int row = pos / 9;
+        int col = pos % 9;
+
+        // 已经挖洞的格子和右下数独第一宫的格子不能挖
+        if (twodoku->tdk->sudoku_DR[row][col] == 0 || (row < 3 && col < 3)){
             i--;
             continue;
         }
 
-        int num = twodoku->sudoku_UL[row][col];
-        twodoku->sudoku_UL[row][col] = 0;
-        if (ConsistentWithAnswer(twodoku->sudoku_UL, twodoku->ans_UL) == false){
-            twodoku->sudoku_UL[row][col] = num;
+        int num = twodoku->tdk->sudoku_DR[row][col];
+        twodoku->tdk->sudoku_DR[row][col] = 0;
+        // 挖洞后有多解的格子不能挖
+        if (ConsistentWithAnswer(twodoku->tdk->sudoku_DR, twodoku->ans->sudoku_DR) == false){
+            twodoku->tdk->sudoku_DR[row][col] = num;
             i--;
         }
     }
 
-    CopyOverlappedBlock(&twodoku->sudoku_UL, &twodoku->sudoku_DR);
-
-    for (int i = 0; i < hole_num - 5; i++){
-        if ((int)(clock() - start) * 1000 / CLOCKS_PER_SEC >= DIG_TIME_LIMIT){
-            return false;
-        }
-
-        int pos = rand() % 81;
-        int row = pos / 9;
-        int col = pos % 9;
-
-        if (twodoku->sudoku_DR[row][col] == 0 || (row < 3 && col < 3)){
-            i--;
-            continue;
-        }
-
-        int num = twodoku->sudoku_DR[row][col];
-        twodoku->sudoku_DR[row][col] = 0;
-        if (ConsistentWithAnswer(twodoku->sudoku_DR, twodoku->ans_DR) == false){
-            twodoku->sudoku_DR[row][col] = num;
-            i--;
+    // 改变不是提示数的数字的符号，方便双数独的格式化输出
+    for (int i = 0; i < 9; i++){
+        for (int j = 0; j < 9; j++){
+            if (twodoku->tdk->sudoku_UL[i][j] == 0){
+                twodoku->ans->sudoku_UL[i][j] = 0 - twodoku->ans->sudoku_UL[i][j];
+            }
+            if (twodoku->tdk->sudoku_DR[i][j] == 0){
+                twodoku->ans->sudoku_DR[i][j] = 0 - twodoku->ans->sudoku_DR[i][j];
+            }
         }
     }
 
@@ -368,10 +452,10 @@ void GetClueNumber(Twodoku *twodoku)
     twodoku->clue_num = 0;
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
-            if (twodoku->sudoku_UL[i][j] != 0){
+            if (twodoku->tdk->sudoku_UL[i][j] != 0){
                 twodoku->clue_num++;
             }
-            if (twodoku->sudoku_DR[i][j] != 0){
+            if (twodoku->tdk->sudoku_DR[i][j] != 0){
                 twodoku->clue_num++;
             }
         }
@@ -382,39 +466,47 @@ void GetClueNumber(Twodoku *twodoku)
  * @brief 生成双数独初局
  * 
  * @param twodoku 双数独
+ * @param diff 难度
  */
-void GenerateTwodoku(Twodoku *twodoku)
+void GenerateTwodoku(Twodoku *twodoku, int diff)
 {
     clock_t start = clock();
 
-    SetZeros(&twodoku->sudoku_UL);
-    SetZeros(&twodoku->sudoku_DR);
+    // 清零
+    SetZeros(&twodoku->tdk->sudoku_UL);
+    SetZeros(&twodoku->tdk->sudoku_DR);
 
+    // 设置对角线宫的数字
     for (int blockIndex = 0; blockIndex < 3; blockIndex++){
-        SetDiagonalBlock(&twodoku->sudoku_UL, blockIndex, (unsigned int)blockIndex);
+        SetDiagonalBlock(&twodoku->tdk->sudoku_UL, blockIndex, (unsigned int)blockIndex);
     }
 
-    CopyOverlappedBlock(&twodoku->sudoku_UL, &twodoku->sudoku_DR);
+    CopyOverlappedBlock(&twodoku->tdk->sudoku_UL, &twodoku->tdk->sudoku_DR);
 
     for (int blockIndex = 4; blockIndex < 6; blockIndex++){
-        SetDiagonalBlock(&twodoku->sudoku_DR, blockIndex - 3, (unsigned int)blockIndex);
+        SetDiagonalBlock(&twodoku->tdk->sudoku_DR, blockIndex - 3, (unsigned int)blockIndex);
     }
 
-    FillNumbers(&twodoku->sudoku_UL, 0, 0);
-    FillNumbers(&twodoku->sudoku_DR, 0, 0);
+    // 填入剩余数字
+    FillNumbers(&twodoku->tdk->sudoku_UL, 0, 0);
+    FillNumbers(&twodoku->tdk->sudoku_DR, 0, 0);
 
-    if (DigHoles(twodoku, clock()) == false){
-        GenerateTwodoku(twodoku);
+    // 挖洞超时，则重新生成双数独
+    if (DigHoles(twodoku, clock(), hole_nums[diff]) == false){
+        GenerateTwodoku(twodoku, diff);
         return;
     }
     GetClueNumber(twodoku);
 
-    PrintTwodoku(twodoku);
+    // 打印双数独
+    PrintTwodoku(twodoku->tdk);
 
     clock_t end = clock();
+    // 输出生成耗时
     printf("time : %.2lfms\n", (double)(end - start) * 1000.0 / CLOCKS_PER_SEC);
 
-    twodoku->flag = true;
+    twodoku->flag_gen = true;
+    twodoku->flag_cnf = false;
 }
 
 /**
@@ -576,16 +668,16 @@ void ClueConstraint(FILE *p_File, Twodoku *twodoku)
     // 给出的提示数已经确定
     for (int i = 1; i <= 9; i++){
         for (int j = 1; j <= 9; j++){
-            if (twodoku->sudoku_UL[i - 1][j - 1] != 0){
-                fprintf(p_File, "%d 0\n", (i - 1) * 81 + (j - 1) * 9 + twodoku->sudoku_UL[i - 1][j - 1]);
+            if (twodoku->tdk->sudoku_UL[i - 1][j - 1] != 0){
+                fprintf(p_File, "%d 0\n", (i - 1) * 81 + (j - 1) * 9 + twodoku->tdk->sudoku_UL[i - 1][j - 1]);
             }
         }
     }
 
     for (int i = 1; i <= 9; i++){
         for (int j = 1; j <= 9; j++){
-            if (twodoku->sudoku_DR[i - 1][j - 1] != 0){
-                fprintf(p_File, "%d 0\n", 729 + (i - 1) * 81 + (j - 1) * 9 + twodoku->sudoku_DR[i - 1][j - 1]);
+            if (twodoku->tdk->sudoku_DR[i - 1][j - 1] != 0){
+                fprintf(p_File, "%d 0\n", 729 + (i - 1) * 81 + (j - 1) * 9 + twodoku->tdk->sudoku_DR[i - 1][j - 1]);
             }
         }
     }
@@ -598,8 +690,8 @@ void ClueConstraint(FILE *p_File, Twodoku *twodoku)
  */
 void TwodokuToCNF(Twodoku *twodoku)
 {
-    if (twodoku->flag == false){
-        printf("The board is empty!\n");
+    if (twodoku->flag_gen == false){
+        printf("The twodoku has not been generated!\n");
         return;
     }
 
@@ -617,8 +709,9 @@ void TwodokuToCNF(Twodoku *twodoku)
     OverlapConstraint(p_File);
     ClueConstraint(p_File, twodoku);
 
-    printf("The twodoku has been successfully transformed into a .cnf file called \"Twodoku.cnf\".\n");
     fclose(p_File);
+
+    twodoku->flag_cnf = true;
 }
 
 /**
@@ -630,55 +723,133 @@ void TwodokuToCNF(Twodoku *twodoku)
  * @return true 正确
  * @return false 错误
  */
-bool CheckAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku)
+bool CheckTwodokuAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku)
 {
-    if (twodoku->flag == false){
-        printf("The board is empty!\n");
-        return ERROR;
+    if (twodoku->flag_gen == false){
+        printf("The twodoku has not been generated!\n");
+        return false;
     }else{
         if (*p_truth_table == NULL){
-            printf("The solution is not found!\n");
-            return ERROR;
+            printf("The solution has not been found!\n");
+            return false;
         }
     }
 
-    int solution[2][9][9];
-    for (int i = 1; i <= p_List->variable_num; i++){
-        if ((*p_truth_table)[i] == true){
-            int board = (i - 1) / 729;
-            int row = ((i - 1) % 729) / 81;
-            int col = ((i - 1) % 81) / 9;
-            int num = (i - 1) % 9 + 1;
-            solution[board][row][col] = num;
-        }
+    // 验证SAT求解结果
+    if (CheckSATAnswer(p_List, p_truth_table) == false){
+        return false;
     }
 
-    for (int i = 0; i < 9; i++){
-        for (int j = 0; j < 9; j++){
-            if (solution[0][i][j] != twodoku->ans_UL[i][j] 
-                || solution[1][i][j] != twodoku->ans_DR[i][j]){
-                printf("Wrong answer!\n");
-                return false;
-            }
-        }
-    }
+    PrintTwodoku(twodoku->ans);
 
+    return true;
+}
+
+/**
+ * @brief 双数独游戏
+ * 
+ * @param twodoku 双数独
+ */
+void PlayTwodoku(Twodoku *twodoku)
+{
+    int board = 1;
+    int row;
+    int col;
+    int num;
+
+    // 复制双数独，以免破坏原双数独
     Twodoku *temp_twodoku = CopyTwodoku(twodoku);
 
-    for (int i = 0; i < 9; i++){
-        for (int j = 0; j < 9; j++){
-            if (temp_twodoku->sudoku_UL[i][j] == 0){
-                temp_twodoku->sudoku_UL[i][j] = 0 - solution[0][i][j];
+    while (board){
+        system("cls");
+        PrintTwodoku(temp_twodoku->tdk);
+
+        // 判断胜利
+        bool flag = true;
+        for (int i = 0; i < 9; i++){
+            for (int j = 0; j < 9; j++){
+                if (abs(temp_twodoku->tdk->sudoku_UL[i][j]) != temp_twodoku->ans->sudoku_UL[i][j] 
+                    || abs(temp_twodoku->tdk->sudoku_DR[i][j]) != temp_twodoku->ans->sudoku_UL[i][j]){
+                    flag = false;
+                }
             }
-            if (temp_twodoku->sudoku_DR[i][j] == 0){
-                temp_twodoku->sudoku_DR[i][j] = 0 - solution[1][i][j];
+        }
+        if (flag == true){
+            printf("You win!\n");
+            break;
+        }
+
+        // 接受输入参数并判断合法性
+        printf("    Please input parameters:\n");
+        scanf("%d", &board);
+        if (board == 0){
+            break;
+        }
+        if (board == -1){
+            PrintTwodoku(twodoku->ans);
+            getchar();getchar();
+            continue;
+        }
+
+        scanf("%d %d %d", &row, &col, &num);
+
+        if (board < 0 || board > 2 || row < 1 || row > 9 || col < 1 || col > 9 || num < 0 || num > 9){
+            printf("Invalid Input!\n");
+            getchar();getchar();
+            continue;
+        }
+
+        // 左上数独
+        if (board == 1){
+            if (temp_twodoku->tdk->sudoku_UL[row - 1][col - 1] > 0){
+                printf("Clues can not be edited!\n");
+                getchar();getchar();
+            }else{
+                temp_twodoku->tdk->sudoku_UL[row - 1][col - 1] = 0 - num;
+                if (row >= 7 && row <= 9 && col >= 7 && col <= 9){
+                    temp_twodoku->tdk->sudoku_DR[row - 7][col - 7] = temp_twodoku->tdk->sudoku_UL[row - 1][col - 1];
+                }
+            }
+        }
+
+        // 右下数独
+        if (board == 2){
+            if (temp_twodoku->tdk->sudoku_DR[row - 1][col - 1] > 0){
+                printf("Clues can not be edited!\n");
+                getchar();getchar();
+            }else{
+                temp_twodoku->tdk->sudoku_DR[row - 1][col - 1] = 0 - num;
+                if (row >= 1 && row <= 3 && col >= 1 && col <= 3){
+                    temp_twodoku->tdk->sudoku_UL[row + 5][col + 5] = temp_twodoku->tdk->sudoku_DR[row - 1][col - 1];
+                }
             }
         }
     }
 
-    PrintTwodoku(temp_twodoku);
-    printf("Correct answer!\n");
-
     free(temp_twodoku);
-    return true;
+}
+
+/**
+ * @brief 双数独游戏指南
+ * 
+ */
+void TwodokuPlayingGuide()
+{
+    printf("INPUTS\n");
+    printf("-------------------------------------------------------------------\n");
+    printf("If you want to fill in numbers, please input four parameters in order:\n");
+    printf("<board> <row> <col> <num>\n\n");
+    printf("For example:\n");
+    printf("\"1 2 3 4\" means filling in number 4 at the grid (row 2, col 3) of the upleft sudoku borad.\n");
+    printf("\"2 8 9 0\" means clearing the number at the grid (row 8, col 9) of the downright sudoku board.\n\n");
+    printf("If you want to exit, please input 0.\n\n");
+    printf("If you want to get the answer, please input -1.\n\n");
+    printf("OUTPUTS\n");
+    printf("-------------------------------------------------------------------\n");
+    Color(GREY);printf("0 Grey");Color(WHITE);printf(" - empty grids\n");
+    Color(LIGHT_PURPLE);printf("1 Light purple");Color(WHITE);printf(" - labels of boards, rows and columns\n");
+    Color(LIGHT_WHITE);printf("2 Light white");Color(WHITE);printf(" - uneditable clues\n");
+    Color(LIGHT_GREEN);printf("3 Light green");Color(WHITE);printf(" - valid and editable filled-in numbers\n");
+    Color(RED);printf("4 Red");Color(WHITE);printf(" - conflicted and uneditable numbers\n");
+    Color(YELLOW);printf("5 Yellow");Color(WHITE);printf(" - conflicted and editable numbers\n");
 }
