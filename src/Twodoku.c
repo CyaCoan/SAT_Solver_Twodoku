@@ -1,9 +1,9 @@
 /**
  * @file Twodoku.c
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2022-08-25
+ * @author CyaCoan (cyacoan@163.com)
+ * @brief 双数独游戏
+ * @version 1.0
+ * @date 2022-09-09
  * 
  * @copyright Copyright (c) 2022
  * 

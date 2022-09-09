@@ -1,9 +1,9 @@
 /**
  * @file header.h
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2022-08-25
+ * @author CyaCoan (cyacoan@163.com)
+ * @brief SAT求解器与双数独游戏的头文件
+ * @version 1.0
+ * @date 2022-09-09
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -20,27 +20,20 @@
 #include<time.h>
 #include<windows.h>
 
-#define POS 1
-#define NEG -1
+#define SAT 1               // 可满足
+#define UNSAT 0             // 不可满足
+#define TLE -1              // 超时
+#define NORMAL -2           // 正常
 
-#define OK 1
-#define ERROR 0
+#define BUFF_SIZE 100       // 读取.cnf文件注释的缓冲区大小
+#define PATH_SIZE 70        // 文件路径的最大长度
+#define FILE_NAME_SIZE 50   // 文件名的最大长度
 
-#define SAT 1
-#define UNSAT 0
-#define TLE -1
-#define NORMAL -2
+#define TIME_LIMIT 10       // 解决SAT问题的时限（秒）
+#define DIG_TIME_LIMIT 300  // 双数独挖洞的时限（毫秒）
 
-#define BUFF_SIZE 100
-#define PATH_SIZE 70
-#define FILE_NAME_SIZE 50
-#define MAX 10000
-
-#define TIME_LIMIT 10
-#define DIG_TIME_LIMIT 300
-
-#define ROW 9
-#define COL 9
+#define ROW 9               // 行数
+#define COL 9               // 列数
 
 typedef int status;
 
@@ -76,10 +69,10 @@ typedef struct Twodoku{                 // 双数独
     Board *ans;                         // 双数独的答案
 } Twodoku;
 
-const int all_nums[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-const int hole_nums[] = {0, 25, 35, 45, 55};
+const int all_nums[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};     // 数字1到9
+const int hole_nums[] = {0, 25, 35, 45, 55};            // 不同难度对应的挖洞数
 
-enum colors{
+enum colors{        // 输出文字的颜色
     BLACK, 
     BLUE, 
     GREEN, 
@@ -98,10 +91,12 @@ enum colors{
     LIGHT_WHITE, 
     BACKGROUND};
 
+/* CNF_Parser.c */
 bool IsPureNumber(char *str);
 void ReadCNF(char *path, List *p_List);
 void OutputCNF(List *p_List);
 
+/* DPLL_Solver.c*/
 int GetUnitClause(List *p_List);
 bool IsEmptyCNF(List *p_List);
 bool HaveEmptyClause(List *p_List);
@@ -121,6 +116,7 @@ void DPLLSolveSAT(char *path_out, List *p_List, bool **p_truth_table, int mode);
 bool EvaluateClause(ClauseNode *p_Clause, bool **p_truth_table);
 bool CheckSATAnswer(List *p_List, bool **p_truth_table);
 
+/* Twodoku.c */
 void SetZeros(int (*sudoku)[ROW][COL]);
 void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num);
 void PrintSudoku(int (*sudoku)[ROW][COL]);
@@ -147,6 +143,7 @@ bool CheckTwodokuAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku);
 void PlayTwodoku(Twodoku *twodoku);
 void TwodokuPlayingGuide();
 
+/* Display.c */
 void Color(short x);
 void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List);
 void SATSolvingSystem(char *path_out, List *p_List, bool **p_truth_table);

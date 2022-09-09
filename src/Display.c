@@ -41,18 +41,20 @@ void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
         strcpy(file_name, f_name);
     }
 
+    // 获取输入路径（test文件夹路径加.cnf文件名）
     *path_in = (char *)malloc(sizeof(char) * PATH_SIZE);
     strcpy(*path_in, dir_in);
     strcat(*path_in, file_name);
 
+    // 截取文件名无后缀部分
     *path_out = (char *)malloc(sizeof(char) * PATH_SIZE);
     int i = strlen(file_name) - 1;
     while (file_name[i] != '.') i--;
     file_name[i] = '\0';
 
+    // 获取输出路径（res文件夹路径加.res文件名）
     p_List->name = (char *)malloc(sizeof(char) * (strlen(file_name) + 1));
     strcpy(p_List->name, file_name);
-
     strcpy(*path_out, dir_out);
     strcat(*path_out, file_name);
     strcat(*path_out, suffix);
