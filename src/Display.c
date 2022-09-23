@@ -119,13 +119,11 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
             case 1:
             GetPaths(NULL, &path_in, &path_out, p_List);
             ReadCNF(path_in, p_List);
-            printf("Read Successfully!\n");
             getchar();getchar();
             break;
 
             case 2:
             OutputCNF(p_List);
-            printf("Output Successfully!\nPlease check the result in the file \"../CNF_Parser_Output.txt\"\n");
             getchar();getchar();
             break;
 
@@ -157,7 +155,7 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
  * 
  * @param twodoku 双数独
  */
-void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table)
+void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table, List *p_List, char **path_in, char **path_out)
 {
     int op = 1;
     while (op){
@@ -176,6 +174,10 @@ void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table)
                 *p_truth_table = NULL;
             }
             GenerateTwodoku(twodoku, op);
+            TwodokuToCNF(twodoku);
+            GetPaths("Twodoku.cnf", path_in, path_out, p_List);
+            ReadCNF(*path_in, p_List);
+            OutputCNF(p_List);
             getchar();getchar();
         }
     }
@@ -244,11 +246,7 @@ void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku)
         scanf("%d", &op);
         switch (op){
             case 1:
-            TwodokuGeneratingSystem(twodoku, p_truth_table);
-            TwodokuToCNF(twodoku);
-            GetPaths("Twodoku.cnf", &path_in, &path_out, p_List);
-            ReadCNF(path_in, p_List);
-            OutputCNF(p_List);
+            TwodokuGeneratingSystem(twodoku, p_truth_table, p_List, &path_in, &path_out);
             break;
 
             case 2:

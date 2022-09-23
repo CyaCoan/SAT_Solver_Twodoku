@@ -125,6 +125,8 @@ void ReadCNF(char *path, List *p_List)
     p_ListTail->next_clause = NULL;
 
     p_List->flag = true;
+
+    printf("Read Successfully!\n");
     fclose(p_File);
 }
 
@@ -167,5 +169,6 @@ void OutputCNF(List *p_List)
         p_Clause = p_Clause->next_clause;
     }
 
+    printf("Output Successfully!\nPlease check the result in the file \"../CNF_Parser_Output.txt\"\n");
     fclose(p_File);
 }

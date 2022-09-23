@@ -319,11 +319,10 @@ ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause)
 /**
  * @brief 删除文字
  * 
- * @param p_List 存储CNF的十字链表
  * @param p_Clause 要删除的文字所在的子句
  * @param p_Literal 要删除的文字
  */
-void DeleteLiteral(List *p_List, ClauseNode *p_Clause, LiteralNode *p_Literal)
+void DeleteLiteral(ClauseNode *p_Clause, LiteralNode *p_Literal)
 {
     // 更新子句的文字数
     p_Clause->literal_num--;
@@ -368,7 +367,7 @@ void SimplifyCNF(List *p_List, int unit_clause)
 
             // 出现与单子句的逆相同的文字则删除该文字
             if (p_Literal->literal == 0 - unit_clause){
-                DeleteLiteral(p_List, p_Clause, p_Literal);
+                DeleteLiteral(p_Clause, p_Literal);
                 break;
             }
 
@@ -647,6 +646,11 @@ bool EvaluateClause(ClauseNode *p_Clause, bool **p_truth_table)
  */
 bool CheckSATAnswer(List *p_List, bool **p_truth_table)
 {
+    if (*p_truth_table == NULL){
+        printf("The SAT problem has not been solved!\n");
+        return false;
+    }
+    
     // 遍历表，当所有子句都为真，范式才为真
     for (ClauseNode *p_Clause = p_List->first_clause; 
         p_Clause; p_Clause = p_Clause->next_clause){

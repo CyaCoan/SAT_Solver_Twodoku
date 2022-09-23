@@ -106,7 +106,7 @@ double GetWeight(int n);
 int SelectLiteral_2(List *p_List);
 int SelectLiteral_3(List *p_List);
 ClauseNode *DeleteClause(List *p_List, ClauseNode *p_Clause);
-void DeleteLiteral(List *p_List, ClauseNode *p_Clause, LiteralNode *p_Literal);
+void DeleteLiteral(ClauseNode *p_Clause, LiteralNode *p_Literal);
 void SimplifyCNF(List *p_List, int unit_clause);
 List *CopyList(List *p_List);
 void ClearList(List *p_List);
@@ -148,7 +148,7 @@ void Color(short x);
 void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List);
 void SATSolvingSystem(char *path_out, List *p_List, bool **p_truth_table);
 void SATSolverSystem(List *p_List, bool **p_truth_table);
-void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table);
+void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table, List *p_List, char **path_in, char **path_out);
 void TwodokuPlayingSystem(Twodoku *twodoku);
 void TwodokuSystem(List *p_List, bool **p_truth_table, Twodoku *twodoku);
 
