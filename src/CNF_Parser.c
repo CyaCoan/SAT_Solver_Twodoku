@@ -63,7 +63,7 @@ void ReadCNF(char *path, List *p_List)
         
         p_List->variable_num = atoi(var_num);
         p_List->clause_num = atoi(cls_num);
-    }else{
+    }else{ // 参数非法时终止读取
         printf("There is a read error!\n");
         return;
     }
@@ -92,9 +92,9 @@ void ReadCNF(char *path, List *p_List)
         int literal;
         while ( fscanf(p_File, "%s", &ltrl) ){
             // 读取文字
-            if (IsPureNumber(ltrl)){
+            if (IsPureNumber(ltrl) && abs(atoi(ltrl)) <= p_List->variable_num){
                 literal = atoi(ltrl);
-            }else{
+            }else{ // 文字非法时终止读取
                 printf("There is a read error!\n");
                 ClearList(p_List);
                 return;

@@ -65,7 +65,7 @@ void SetColorAndPrintNumber(int (*sudoku)[ROW][COL], int row, int col, int num)
 /**
  * @brief 打印双数独
  * 
- * @param twodoku 双数独本体
+ * @param tdk 双数独本体
  */
 void PrintTwodoku(Board *tdk)
 {
@@ -740,7 +740,34 @@ bool CheckTwodokuAnswer(List *p_List, bool **p_truth_table, Twodoku *twodoku)
         return false;
     }
 
-    PrintTwodoku(twodoku->ans);
+    // 将真值表数据写入双数独盘并打印
+    Board temp;
+    for (int i = 1; i <= 729; i++){
+        if ((*p_truth_table)[i] == true){
+            int row = (i - 1) / 81 + 1;
+            int col = ((i - 1) % 81) / 9 + 1;
+            int num = (i - 1) % 9 + 1;
+            if (twodoku->ans->sudoku_UL[row - 1][col - 1] > 0){
+                temp.sudoku_UL[row - 1][col - 1] = num;
+            }else{
+                temp.sudoku_UL[row - 1][col - 1] = 0 - num;
+            }
+        }
+    }
+    for (int i = 730; i <= 1458; i++){
+        if ((*p_truth_table)[i] == true){
+            int row = (i - 729 - 1) / 81 + 1;
+            int col = ((i - 729 - 1) % 81) / 9 + 1;
+            int num = (i - 729 - 1) % 9 + 1;
+            if (twodoku->ans->sudoku_DR[row - 1][col - 1] > 0){
+                temp.sudoku_DR[row - 1][col - 1] = num;
+            }else{
+                temp.sudoku_DR[row - 1][col - 1] = 0 - num;
+            }
+        }
+    }
+    PrintTwodoku(&temp);
+    // PrintTwodoku(twodoku->ans);
 
     return true;
 }
@@ -768,14 +795,15 @@ void PlayTwodoku(Twodoku *twodoku)
         bool flag = true;
         for (int i = 0; i < 9; i++){
             for (int j = 0; j < 9; j++){
-                if (abs(temp_twodoku->tdk->sudoku_UL[i][j]) != temp_twodoku->ans->sudoku_UL[i][j] 
-                    || abs(temp_twodoku->tdk->sudoku_DR[i][j]) != temp_twodoku->ans->sudoku_UL[i][j]){
+                if (temp_twodoku->tdk->sudoku_UL[i][j] != temp_twodoku->ans->sudoku_UL[i][j] 
+                    || temp_twodoku->tdk->sudoku_DR[i][j] != temp_twodoku->ans->sudoku_DR[i][j]){
                     flag = false;
                 }
             }
         }
         if (flag == true){
             printf("You win!\n");
+            getchar();getchar();
             break;
         }
 

@@ -89,7 +89,8 @@ enum colors{        // 输出文字的颜色
     LIGHT_PURPLE, 
     LIGHT_YELLOW, 
     LIGHT_WHITE, 
-    BACKGROUND};
+    BACKGROUND
+};
 
 /* CNF_Parser.c */
 bool IsPureNumber(char *str);
@@ -145,7 +146,7 @@ void TwodokuPlayingGuide();
 
 /* Display.c */
 void Color(short x);
-void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List);
+bool GetPaths(char *f_name, char **path_in, char **path_out, List *p_List);
 void SATSolvingSystem(char *path_out, List *p_List, bool **p_truth_table);
 void SATSolverSystem(List *p_List, bool **p_truth_table);
 void TwodokuGeneratingSystem(Twodoku *twodoku, bool **p_truth_table, List *p_List, char **path_in, char **path_out);

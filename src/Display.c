@@ -26,8 +26,11 @@ void Color(short x)
  * @param path_in 输入.cnf路径
  * @param path_out 输出.res路径
  * @param p_List 存储CNF的十字链表
+ * 
+ * @return true 获取成功
+ * @return false 获取失败
  */
-void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
+bool GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
 {
     char *dir_in = "../test/";
     char *dir_out = "../res/";
@@ -42,9 +45,20 @@ void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
     }
 
     // 获取输入路径（test文件夹路径加.cnf文件名）
-    *path_in = (char *)malloc(sizeof(char) * PATH_SIZE);
-    strcpy(*path_in, dir_in);
-    strcat(*path_in, file_name);
+    char *in = (char *)malloc(sizeof(char) * PATH_SIZE);
+    strcpy(in, dir_in);
+    strcat(in, file_name);
+
+    // 检验输入路径是否合法
+    FILE *fp = fopen(in, "r");
+    if (fp == NULL){
+        free(in);
+        fclose(fp);
+        printf("Invalid Path!\n");
+        return false;
+    }
+    *path_in = in;
+    fclose(fp);
 
     // 截取文件名无后缀部分
     *path_out = (char *)malloc(sizeof(char) * PATH_SIZE);
@@ -58,6 +72,8 @@ void GetPaths(char *f_name, char **path_in, char **path_out, List *p_List)
     strcpy(*path_out, dir_out);
     strcat(*path_out, file_name);
     strcat(*path_out, suffix);
+    
+    return true;
 }
 
 /**
@@ -117,8 +133,9 @@ void SATSolverSystem(List *p_List, bool **p_truth_table)
         scanf("%d", &op);
         switch (op){
             case 1:
-            GetPaths(NULL, &path_in, &path_out, p_List);
-            ReadCNF(path_in, p_List);
+            if (GetPaths(NULL, &path_in, &path_out, p_List)){
+                ReadCNF(path_in, p_List);
+            }
             getchar();getchar();
             break;
 
